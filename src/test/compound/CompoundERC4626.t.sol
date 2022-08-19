@@ -12,6 +12,10 @@ import {IComptroller} from "../../compound/external/IComptroller.sol";
 import {CompoundERC4626Factory} from
     "../../compound/CompoundERC4626Factory.sol";
 
+interface IERC20 {
+    function balanceOf(address account) external view returns (uint256);
+}
+
 contract CompoundERC4626Test is Test {
     address constant rewardRecipient = address(0x01);
 
@@ -21,6 +25,7 @@ contract CompoundERC4626Test is Test {
     ERC20 constant dai = ERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
     address constant cDaiAddress = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
     address constant cEtherAddress = 0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5;
+    IERC20 constant compAddress = IERC20(0xc00e94Cb662C3520282E6f5717214004A7f26888);
 
     CompoundERC4626 public vault;
     CompoundERC4626Factory public factory;
@@ -105,7 +110,20 @@ contract CompoundERC4626Test is Test {
         assertEq(vault.totalAssets(), 0);
     }
 
-    function test_claimRewards() public {
-        vault.claimRewards();
+    function testRewardRatePerMarket() public {
+        deal(address(underlying), address(this), 0.5e18);
+        underlying.approve(address(vault), 0.5e18);
+        assertEq(underlying.allowance(address(this), address(vault)), 0.5e18);
+
+        vault.deposit(0.5e18, address(this));
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(address(this));
+         uint256 recipientBalance = vault.claimRewards();
+        uint256 compRatePerMarket = vault.compRatePerMarket();
+
+
+        emit log_uint(compAddress.balanceOf(rewardRecipient));
+        emit log_string("Comp in Recipient Address");
+   
     }
 }
