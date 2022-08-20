@@ -60,7 +60,7 @@ contract CompoundERC4626 is ERC4626 {
         ICERC20 cToken_,
         address rewardRecipient_,
         IComptroller comptroller_
-    )
+    ) payable
         ERC4626(asset_, _vaultName(asset_), _vaultSymbol(asset_))
     {
         comp = comp_;
@@ -79,6 +79,12 @@ contract CompoundERC4626 is ERC4626 {
         cTokens[0] = cToken;
         comptroller.claimComp(address(this), cTokens);
         comp.safeTransfer(rewardRecipient, comp.balanceOf(address(this)));
+        comp.balanceOf(rewardRecipient);
+    }
+
+        /// @notice Claims liquidity mining rewards from Compound and sends it to rewardRecipient
+    function borrow(uint256 amount) external returns(uint256) {
+        cToken.borrow(amount);
     }
 
     function compRate() public returns(uint256) {
@@ -116,22 +122,41 @@ contract CompoundERC4626 is ERC4626 {
         }
     }
 
-    function afterDeposit(uint256 assets, uint256 /*shares*/ )
+    function afterDeposit(uint256 assets, uint256 shares, uint256 iterations )
         internal
         virtual
         override
     {
-        /// -----------------------------------------------------------------------
-        /// Deposit assets into Compound
-        /// -----------------------------------------------------------------------
-
+        
         // approve to cToken
         asset.safeApprove(address(cToken), assets);
+         
+       if(iterations < 1) {
 
-        // deposit into cToken
         uint256 errorCode = cToken.mint(assets);
-        if (errorCode != NO_ERROR) {
-            revert CompoundERC4626__CompoundError(errorCode);
+
+        if (errorCode != NO_ERROR)  revert CompoundERC4626__CompoundError(errorCode);
+
+       } else {
+            uint256 nextCollateralAmount = assets;
+
+            for(uint256 i; i < iterations;) {
+                
+                asset.safeApprove(address(cToken), nextCollateralAmount);
+
+                uint256 errorCode = cToken.mint(nextCollateralAmount);
+                if (errorCode != NO_ERROR)  revert CompoundERC4626__CompoundError(errorCode);
+
+                nextCollateralAmount = (assets * 70) / 100;
+
+                uint256 borrowErrorCode = cToken.borrow(nextCollateralAmount);
+
+                if (borrowErrorCode != NO_ERROR) {
+                    revert CompoundERC4626__CompoundError(errorCode);
+                }
+
+                unchecked {++i;}
+            }
         }
     }
 
