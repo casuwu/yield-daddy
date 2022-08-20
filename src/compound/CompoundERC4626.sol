@@ -140,14 +140,14 @@ contract CompoundERC4626 is ERC4626 {
        } else {
             uint256 nextCollateralAmount = assets;
 
-            for(uint256 i; i < iterations;) {
-                
+            for(uint256 i = 0; i < iterations;) {
+                // just do a max approve once, save some gas?
                 asset.safeApprove(address(cToken), nextCollateralAmount);
 
                 uint256 errorCode = cToken.mint(nextCollateralAmount);
                 if (errorCode != NO_ERROR)  revert CompoundERC4626__CompoundError(errorCode);
 
-                nextCollateralAmount = (assets * 70) / 100;
+                nextCollateralAmount = (nextCollateralAmount * 70) / 100;
 
                 uint256 borrowErrorCode = cToken.borrow(nextCollateralAmount);
 

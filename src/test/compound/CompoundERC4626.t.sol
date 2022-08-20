@@ -124,9 +124,15 @@ contract CompoundERC4626Test is Test {
     function testRewardRatePerMarket() public {
         deal(address(underlying), address(this), 100e18);
         underlying.approve(address(vault), 100e18);
-        dai.balanceOf(address(this));
-        vault.deposit(100e18, address(this), 2);
+        cToken.balanceOf(address(this));
+        vault.deposit(100e18, address(this), 5);
         emit log_string("Balance Before and After Loop");
+                dai.balanceOf(address(this));
+        vault.balanceOf(address(this));
+        emit log_string("Credit Tokens on account");
+        emit log_uint(vault.balanceOf(address(this)));
+        // C Tokens in address(this) after  taking out leveraged position
+
         // vm.warp(block.timestamp);
         //  uint256 recipientBalance = vault.claimRewards();
         // uint256 compRatePerMarket = vault.compRatePerMarket();
