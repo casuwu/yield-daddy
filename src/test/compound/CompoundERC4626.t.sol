@@ -121,32 +121,17 @@ contract CompoundERC4626Test is Test {
         assertEq(vault.totalAssets(), 0);
     }
 
-    function testRewardRatePerMarket() public {
+    function testFullRedeemWhenLooped() public {
         deal(address(underlying), address(this), 100e18);
         underlying.approve(address(vault), 100e18);
-        cToken.balanceOf(address(this));
-        vault.deposit(100e18, address(this), 5);
-        emit log_string("Balance Before and After Loop");
-                dai.balanceOf(address(this));
-        vault.balanceOf(address(this));
-        emit log_string("Credit Tokens on account");
-        emit log_uint(vault.balanceOf(address(this)));
-        // C Tokens in address(this) after  taking out leveraged position
 
-        // vm.warp(block.timestamp);
-        //  uint256 recipientBalance = vault.claimRewards();
-        // uint256 compRatePerMarket = vault.compRatePerMarket();
-        // emit log_uint(compAddress.balanceOf(address(this)));
-        // emit log_uint(compAddress.balanceOf(rewardRecipient));
-        // emit log_string("Testing");
-        // vm.warp(block.timestamp + 1  days);
-        // vault.claimRewards();
-        
-        // vault.borrow(1e18);
-        // underlying.balanceOf(address(this));
-        // emit log_uint(compAddress.balanceOf(address(this)));
-        // emit log_uint(compAddress.balanceOf(rewardRecipient));
-        // emit log_string("Comp in Recipient Address");
-        // emit log_string("Testing");
+        vault.deposit(100e18, address(this), 2);
+        //After 2 loop with 70% loop, user should have 219 cTokens (cDAI)
+        assertEq(vault.balanceOf(address(this)) == 219e18, true);
+        // After borrowing, the left over collateral(DAI) is still in the vault
+        assertEq(underlying.balanceOf(address(vault)) == 49e18, true);
+        vault.withdraw(cToken.balanceOf(address(this)), address(this), address(this));
+        // Make sure depositing acct has 0 after withdrawing
+        assertEq(cToken.balanceOf(address(this)), 0);
     }
 }

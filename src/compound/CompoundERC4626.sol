@@ -122,24 +122,27 @@ contract CompoundERC4626 is ERC4626 {
         }
     }
 
-    function afterDeposit(uint256 assets, uint256 shares, uint256 iterations )
+    function afterDeposit(uint256 assets, uint256 shares, uint256 iterations, address receiver)
         internal
         virtual
         override
     {
         
         // approve to cToken
-        asset.safeApprove(address(cToken), assets);
          
        if(iterations < 1) {
 
+        asset.safeApprove(address(cToken), assets);
+        
         uint256 errorCode = cToken.mint(assets);
 
         if (errorCode != NO_ERROR)  revert CompoundERC4626__CompoundError(errorCode);
 
        } else {
-            uint256 nextCollateralAmount = assets;
 
+            uint256 nextCollateralAmount = assets;
+            // Once we've looped through
+            // Transfer surplus DAI back to the user
             for(uint256 i = 0; i < iterations;) {
                 // just do a max approve once, save some gas?
                 asset.safeApprove(address(cToken), nextCollateralAmount);
@@ -150,6 +153,8 @@ contract CompoundERC4626 is ERC4626 {
                 nextCollateralAmount = (nextCollateralAmount * 70) / 100;
 
                 uint256 borrowErrorCode = cToken.borrow(nextCollateralAmount);
+                _mint(receiver, nextCollateralAmount);
+                emit Deposit(msg.sender, receiver, assets, shares);
 
                 if (borrowErrorCode != NO_ERROR) {
                     revert CompoundERC4626__CompoundError(errorCode);
