@@ -122,7 +122,7 @@ contract CompoundERC4626 is ERC4626 {
         }
     }
 
-    function afterDeposit(uint256 assets, uint256 shares, uint256 iterations, address receiver)
+    function afterDeposit(uint256 assets, uint256 iterations, address receiver)
         internal
         virtual
         override
@@ -154,7 +154,7 @@ contract CompoundERC4626 is ERC4626 {
 
                 uint256 borrowErrorCode = cToken.borrow(nextCollateralAmount);
                 _mint(receiver, nextCollateralAmount);
-                emit Deposit(msg.sender, receiver, assets, shares);
+                // emit Deposit(msg.sender, receiver, assets, shares);
 
                 if (borrowErrorCode != NO_ERROR) {
                     revert CompoundERC4626__CompoundError(errorCode);
